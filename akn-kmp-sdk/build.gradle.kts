@@ -7,13 +7,13 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
 }
 
-group = "io.github.kotlin"
+group = "com.akaun.kmp.sdk"
 version = "1.0.0"
 
 kotlin {
     jvm()
     androidLibrary {
-        namespace = "org.jetbrains.kotlinx.multiplatform.akn-kmp-client-sdk.template"
+        namespace = "com.akaun.kmp.sdk"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -39,6 +39,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             //put your multiplatform dependencies here
+
         }
 
         commonTest.dependencies {
@@ -52,11 +53,11 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "akn-kmp-client-sdk", version.toString())
+    coordinates(group.toString(), "akn-kmp-sdk", version.toString())
 
     pom {
-        name = "My akn-kmp-client-sdk"
-        description = "A akn-kmp-client-sdk."
+        name = "My akn-kmp-sdk"
+        description = "A akn-kmp-sdk."
         inceptionYear = "2024"
         url = "https://github.com/kotlin/multiplatform-library-template/"
         licenses {

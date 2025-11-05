@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "akn-kmp-client-sdk"
-include(":akn-kmp-client-sdk")
+rootProject.name = "akn-kmp-sdk"
+include(":akn-kmp-sdk")
