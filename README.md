@@ -1,19 +1,30 @@
-[![official project](http://jb.gg/badges/official.svg)](https://github.com/JetBrains#jetbrains-on-github)
+# akn-kmp-sdk
 
-# Multiplatform library template
+Kotlin Multiplatform SDK for the akaun API (Android, JVM, iOS), built on Ktor client + kotlinx.serialization.
+It replaces the JVM-only Retrofit SDK [`akn-kotlin-sdk`](https://github.com/bigledger/akn-kotlin-sdk).
 
-## What is it?
+**Status:** foundation only (#4). Models (#5) and services (#6) are being migrated. See epic #3.
 
-This repository contains a simple library project, intended to demonstrate a [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) library that is deployable to [Maven Central](https://central.sonatype.com/).
+## Usage
 
-The library has only one function: generate the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence) starting from platform-provided numbers. Also, it has a test for each platform just to be sure that tests run.
+```kotlin
+val client = createAknHttpClient(
+    baseUrl = Core2Config.CLOUD_URL,
+    authorization = token,          // sent as the Authorization header
+    tenantCode = "my_tenant",       // sent as the tenantCode header
+)
+// Services (from #6) take this client: LoginService(client).login(...)
+```
 
-Note that no other actions or tools usually required for the library development are set up, such as [tracking of backwards compatibility](https://kotlinlang.org/docs/jvm-api-guidelines-backward-compatibility.html#tools-designed-to-enforce-backward-compatibility), explicit API mode, licensing, contribution guideline, code of conduct and others. You can find a guide for best practices for designing Kotlin libraries [here](https://kotlinlang.org/docs/api-guidelines-introduction.html).
+- Non-2xx responses throw `io.ktor.client.plugins.ResponseException`.
+- Logging is off by default (`logLevel = LogLevel.NONE`). `Authorization` is always masked, but `LogLevel.BODY` logs request bodies, including passwords.
+- JSON settings (`AknJson`) mimic the old GSON behaviour: unknown keys ignored, nulls fall back to defaults, numbers accepted in `String` fields.
 
-## Guide
+## Tests
 
-Please find the detailed guide [here](https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-publish-libraries.html).
+```
+./gradlew jvmTest testAndroidHostTest     # any OS (needs JDK 17–21)
+./gradlew iosSimulatorArm64Test           # macOS only
+```
 
-# Other resources
-* [Publishing via the Central Portal](https://central.sonatype.org/publish-ea/publish-ea-guide/)
-* [Gradle Maven Publish Plugin \- Publishing to Maven Central](https://vanniktech.github.io/gradle-maven-publish-plugin/central/)
+To test a model or service, use `MockAknClient` in `commonTest` (`support/MockAknClient.kt`). It answers every request with a canned JSON response and records the requests for assertions.
