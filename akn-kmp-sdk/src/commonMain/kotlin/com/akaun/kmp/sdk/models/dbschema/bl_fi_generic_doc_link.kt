@@ -1,0 +1,55 @@
+package com.akaun.kmp.sdk.models.dbschema
+
+import com.akaun.kmp.sdk.models.dbschema.intermediate.LogJson
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+
+@Serializable
+data class bl_fi_generic_doc_link(
+    var acl_config: JsonElement? = null,
+    var acl_policy: JsonElement? = null,
+    var amount_contra: JsonElement? = null,
+    var amount_signum: JsonElement? = null,
+    var applet_guid: JsonElement? = null,
+    var batch_no: JsonElement? = null,
+    var bin_no: JsonElement? = null,
+    var client_doc_status_01: JsonElement? = null,
+    var client_doc_status_02: JsonElement? = null,
+    var client_doc_status_03: JsonElement? = null,
+    var client_doc_status_04: JsonElement? = null,
+    var client_doc_status_05: JsonElement? = null,
+    var created_by_subject_guid: String? = null,
+    var created_date: String? = null,
+    var date_doc_1_hdr: JsonElement? = null,
+    var date_doc_1_line: JsonElement? = null,
+    var date_doc_2_hdr: JsonElement? = null,
+    var date_doc_2_line: JsonElement? = null,
+    var date_txn: String? = null,
+    var descr: String? = null,
+    var guid: String? = null,
+    var guid_doc_1_hdr: String? = null,
+    var guid_doc_1_line: String? = null,
+    var guid_doc_2_hdr: String? = null,
+    var guid_doc_2_line: String? = null,
+    var guid_doc_event: JsonElement? = null,
+    var log_json: JsonElement? = null,
+    var logic: JsonElement? = null,
+    var module_guid: JsonElement? = null,
+    var namespace: JsonElement? = null,
+    var option: JsonElement? = null,
+    var property_json: JsonElement? = null,
+    var quantity_contra: Double? = null,
+    var quantity_signum: Double? = null,
+    var remarks: JsonElement? = null,
+    var revision: String? = null,
+    var serial_no: JsonElement? = null,
+    var server_doc_type_doc_1_hdr: String? = null,
+    var server_doc_type_doc_1_line: String? = null,
+    var server_doc_type_doc_2_hdr: String? = null,
+    var server_doc_type_doc_2_line: String? = null,
+    var status: String? = null,
+    var txn_type: String? = null,
+    var updated_by_subject_guid: String? = null,
+    var updated_date: String? = null,
+    var vrsn: JsonElement? = null
+)
