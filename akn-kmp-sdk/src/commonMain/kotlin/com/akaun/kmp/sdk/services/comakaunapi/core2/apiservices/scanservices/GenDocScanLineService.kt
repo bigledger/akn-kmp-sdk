@@ -7,9 +7,10 @@ import com.akaun.kmp.sdk.models.aggregates.erp.inventoryitem.SerialNumberModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.ApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.BasicApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.Core2Config
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.invitemservices.InvItemService
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.serialnumberservices.SerialNumberService
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
 import com.akaun.kmp.sdk.utils.wrapper.ApiResult
-import com.akaun.kmp.sdk.utils.wrapper.apiResultOf
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -24,7 +25,6 @@ object GenericDocScanLineUrlPrefix {
     const val Prefix = Core2Config.TENANT_DOMAIN_URL_PREFIX + Core2Config.ERP_MODULE_PREFIX + Core2Config.GENERIC_DOC_PREFIX + "scan-lines"
 }
 
-private const val INV_ITEMS = Core2Config.TENANT_DOMAIN_URL_PREFIX + Core2Config.ERP_MODULE_PREFIX + Core2Config.INV_MODULE_PREFIX + "inv-items/"
 
 class GenDocScanLineService(private val client: HttpClient) {
 
@@ -85,25 +85,13 @@ class GenDocScanLineService(private val client: HttpClient) {
     /* InventoryItemController */
 
     suspend fun getInventoryItemByGuid(guid: String): BasicApiResponseModel<InventoryItemModel> =
-        client.get(INV_ITEMS + "backoffice-ep/" + guid.encodeURLPathPart()).body()
+        InvItemService(client).getInventoryItemByGuid(guid)
 
-    suspend fun getInventoryItemFromItemCode(
-        item_code: String = "",
-        location_guid: String = ""
-    ): ApiResponseModel<InventoryItemModel> =
-        client.get(INV_ITEMS + "stock-take/items/backoffice-ep") {
-            parameter("item_code", item_code)
-            parameter("location_guid", location_guid)
-        }.body()
+    suspend fun getInventoryItemFromItemCode(item_code: String = "", location_guid: String = ""): ApiResponseModel<InventoryItemModel> =
+        InvItemService(client).getInventoryItemFromItemCode(item_code, location_guid)
 
-    suspend fun getInventoryItemFromSerialOrBatch(
-        scan_code: String = "",
-        location_guid: String = ""
-    ): ApiResponseModel<InventoryItemModel> =
-        client.get(INV_ITEMS + "stock-take/serial-batch/backoffice-ep") {
-            parameter("scan_code", scan_code)
-            parameter("location_guid", location_guid)
-        }.body()
+    suspend fun getInventoryItemFromSerialOrBatch(scan_code: String = "", location_guid: String = ""): ApiResponseModel<InventoryItemModel> =
+        InvItemService(client).getInventoryItemFromSerialOrBatch(scan_code, location_guid)
 
     /* SerialNumberController */
 
@@ -117,16 +105,7 @@ class GenDocScanLineService(private val client: HttpClient) {
         calcTotalRecords: Boolean = true,
         limit: Int = 100,
         offset: Int = 0
-    ): ApiResult<PagingResponseModel<SerialNumberModel>> = apiResultOf {
-        client.get(Core2Config.TENANT_DOMAIN_URL_PREFIX + Core2Config.INV_MODULE_PREFIX + "serial-numbers/query") {
-            parameter("sn_id", sn_id)
-            url.parameters.appendAll("sn_ids", sn_ids) // repeated keys like Retrofit
-            parameter("hdr_item_guid", hdr_item_guid)
-            parameter("location_guid", location_guid)
-            parameter("quantity_balance_greater_than", quantity_balance_greater_than)
-            parameter("calcTotalRecords", calcTotalRecords)
-            parameter("limit", limit)
-            parameter("offset", offset)
-        }.body()
-    }
+    ): ApiResult<PagingResponseModel<SerialNumberModel>> = SerialNumberService(client).getSerialNumbersByCriteria(
+        sn_id, sn_ids, hdr_item_guid, location_guid, quantity_balance_greater_than, calcTotalRecords, limit, offset
+    )
 }
