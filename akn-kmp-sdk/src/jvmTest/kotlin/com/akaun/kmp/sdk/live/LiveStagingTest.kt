@@ -23,6 +23,7 @@ import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.locationservices
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.scanservices.GenDocScanLineService
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.serialnumberservices.SerialNumberService
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.FileUpload
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.stockservices.StockTakeDeviceService
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.stockservices.StockTakeOfflineService
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.stockservices.StockTakeRecordService
@@ -34,6 +35,30 @@ import com.akaun.kmp.sdk.services.comakaunapi.core2.dto.GenericDocumentDto
 import com.akaun.kmp.sdk.services.comakaunapi.core2.dto.SerialNumberValidationDto
 import com.akaun.kmp.sdk.models.aggregates.erp.serialnumber.SerialNumberStatus
 import com.akaun.kmp.sdk.utils.wrapper.ApiResult
+import com.akaun.kmp.sdk.models.aggregates.erp.deljob.JobModel
+import com.akaun.kmp.sdk.models.aggregates.erp.gendoc.GenericDocumentModel
+import com.akaun.kmp.sdk.models.dbschema.ForgotPasswordInitRequest
+import com.akaun.kmp.sdk.models.dbschema.LoginRequest
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.deljobservices.DelJobShipmentLinkService
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.deljobservices.JobsDocService
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.delshipmentservices.DelShipmentHdrService
+import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.idservices.IdentityPasswordService
+import com.akaun.kmp.sdk.services.comakaunapi.core2.criteria.JobHdrListingQueryCriteria
+import com.akaun.kmp.sdk.services.comakaunapi.core2.criteria.TripsPostQueryCriteria
+import com.akaun.kmp.sdk.services.comakaunapi.core2.dto.JobsDto
+import io.ktor.client.call.body
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.statement.bodyAsText
@@ -287,6 +312,131 @@ class LiveStagingTest {
         } finally {
             created.forEach { runCatching { scan.deleteGenDocScanLine(it) }.onFailure { e -> log("CLEANUP FAILED scan line $it: $e") } }
             log("cleanup: ${created.size} scan lines")
+        }
+    }
+
+    // ---------- C. writes with no delete endpoint (only with AKN_LIVE_PERSIST=1) ----------
+
+    private val persist = System.getenv("AKN_LIVE_PERSIST") == "1"
+
+    // getJobs needs a trip guid (an empty one gives a backend SQL error), so list jobs without the filter here
+    private suspend fun firstJobOnATrip(c: HttpClient): JobModel? =
+        c.get("core2/tnt/dm/del/jobs/backoffice-ep/query") { parameter("limit", 50) }.body<PagingResponseModel<JobModel>>()
+            .data.firstOrNull { it.bl_del_job_hdr.guid_trip_hdr != null }
+
+    @Test
+    fun genericDocumentCreateAndUpdate() = live { c ->
+        if (!persist) return@live log("generic document create skipped: set AKN_LIVE_PERSIST=1 (creates a permanent document)")
+        val docType = "internal-sales-orders"
+        val svc = BaseGenDocTypeService(c)
+        val src = svc.getGenericDocumentByDTOSnapshot(docType, GenericDocumentDto(limit = 1, order = "DESC", orderBy = "date_txn")).data.first()
+        val hdr = svc.getGenericDocumentByGuid(docType, src.bl_fi_generic_doc_hdr.guid!!).data!!.bl_fi_generic_doc_hdr
+        // Header-only copy; the server assigns guid, revision and document numbers
+        val draft = hdr.copy(guid = null, revision = null, vrsn = null, server_doc_1 = null, server_doc_2 = null, server_doc_3 = null, doc_remarks = "SDK-LIVE create")
+        val created = svc.create(docType, GenericDocumentModel(bl_fi_generic_doc_hdr = draft)).data!!.bl_fi_generic_doc_hdr
+        log("generic document created (permanent): ${created.guid}")
+        svc.updateGenericDocument(docType, GenericDocumentModel(bl_fi_generic_doc_hdr = created.copy(doc_remarks = "SDK-LIVE update")))
+        assertEquals("SDK-LIVE update", svc.getGenericDocumentByGuid(docType, created.guid!!).data?.bl_fi_generic_doc_hdr?.doc_remarks)
+        log("generic document updated")
+    }
+
+    @Test
+    fun jobUpdateAndDocHdrLinks() = live { c ->
+        val job = firstJobOnATrip(c) ?: return@live log("no trip with jobs in the first 30, skipped")
+        val links = JobDocHdrLinkService(c).getJobDocHdrLinkByCriteria(job.bl_del_job_hdr.guid!!, true, "DESC", 10, 0)
+        log("job doc-hdr links for ${job.bl_del_job_hdr.guid}: ${links.data.size}")
+        if (!persist) return@live log("job update skipped: set AKN_LIVE_PERSIST=1 (re-saves a real job)")
+        // Unchanged re-save: proves the PUT body round-trips without altering job content
+        val res = DelJobService(c).updateJob(job)
+        assertEquals("OK_RESPONSE", res.code)
+        log("job re-saved unchanged: ${job.bl_del_job_hdr.guid}")
+    }
+
+    // ---------- D. driver endpoints (temporary driver + trip link, removed in finally) ----------
+
+    @Test
+    fun driverEndpoints() = live { c ->
+        val subject = UserProfileService(c).getUserProfile().data!!.appLoginSubject.guid!!
+        val job = firstJobOnATrip(c) ?: return@live log("no trip with jobs in the first 30, skipped")
+        val jobGuid = job.bl_del_job_hdr.guid!!
+        val tripGuid = job.bl_del_job_hdr.guid_trip_hdr!!
+        val none = "00000000-0000-0000-0000-000000000000"
+
+        val driverGuid = c.post("core2/tnt/dm/del/drivers/backoffice-ep") {
+            setBody(buildJsonObject { putJsonObject("bl_del_driver_hdr") {
+                put("name", "SDK-LIVE driver"); put("login_subject_guid", subject); put("driver_status", "Active"); put("status", "ACTIVE")
+                // Mandatory on create; placeholders only
+                put("phone_number", "0000000000"); put("id_no", "SDK-LIVE"); put("license_no", "SDK-LIVE"); put("join_date", "2026-01-01T00:00:00Z")
+                put("emergency_name", "SDK-LIVE"); put("emergency_phone_number", "0000000000"); put("relationship", "SDK-LIVE") } })
+        }.body<JsonObject>().guidOf("bl_del_driver_hdr")
+        var linkGuid: String? = null
+        var attachmentGuid: String? = null
+        try {
+            linkGuid = c.post("core2/tnt/dm/del/trip-driver-links/backoffice-ep") {
+                setBody(buildJsonObject { putJsonObject("bl_del_trip_driver_link") {
+                    put("trip_hdr_guid", tripGuid); put("driver_hdr_guid", driverGuid); put("status", "ACTIVE") } })
+            }.body<JsonObject>().guidOf("bl_del_trip_driver_link")
+            log("temporary driver $driverGuid linked to trip $tripGuid")
+
+            val listing = DelJobService(c).getJobHdrListingForLoginDriverByPost(JobHdrListingQueryCriteria(job_hdr_guids = setOf(jobGuid)))
+            assertEquals("OK_RESPONSE", listing.code)
+            log("driver job listing: ${listing.data?.size}")
+            log("driver job-shipment links: ${DelJobShipmentLinkService(c).getJobShipmentLinkByCriteriaLoginDriver(jobHdrGuids = setOf(jobGuid)).data.size}")
+            log("driver trip query: ${TripService(c).getDriverTripsLoginDriverEp(TripsPostQueryCriteria(trip_guids = setOf(tripGuid))).data.size}")
+
+            val bytes = "SDK-LIVE attachment".encodeToByteArray()
+            val up = JobAttachmentService(c).createJobAttachment(listOf(FileUpload("sdk-live.txt", bytes, "text/plain")),
+                JobAttachmentModel(bl_del_job_attachment(del_job_hdr_guid = jobGuid, file_name = "sdk-live.txt", obj_type = "FILE", status = "ACTIVE")))
+            attachmentGuid = up.data.orEmpty().first().bl_del_job_attachment.guid
+            val down = JobAttachmentService(c).getJobAttachmentFileByGuidLoginDriver(attachmentGuid!!)
+            log("attachment uploaded $attachmentGuid, downloaded ${down.size} bytes")
+            assertTrue(down.contentEquals(bytes), "downloaded bytes differ: ${down.decodeToString().take(200)}")
+
+            // State-changing endpoints: probe with a job that does not exist so no real job changes
+            listOf<Pair<String, suspend () -> Unit>>(
+                "complete-jobs" to { DelJobService(c).completeJobsLoginDriverEp(none) },
+                "cancel-job" to { JobsDocService(c).cancelJobLoginDriver(JobsDto(jobs_guids = setOf(none), tripHdrGuid = tripGuid)) },
+                "cancel-jobs-from-shipment" to { DelShipmentHdrService(c).cancelJobsFromShipmentLoginDriverEp(JobsDto(jobs_guids = setOf(none), tripHdrGuid = tripGuid)) },
+            ).forEach { (name, call) ->
+                try { call(); log("$name with unknown job: accepted (no-op)") }
+                catch (e: ResponseException) {
+                    val body = e.response.bodyAsText()
+                    log("$name with unknown job: ${e.response.status} ${body.take(200)}")
+                    assertFalse(body.contains("MALFORMED") || e.response.status.value == 403, "$name: $body")
+                }
+            }
+        } finally {
+            attachmentGuid?.let { g -> runCatching { c.delete("core2/tnt/dm/del/job-attachments/login-driver-ep/$g") }.onFailure { log("CLEANUP FAILED attachment $g: $it") } }
+            linkGuid?.let { g -> runCatching { c.delete("core2/tnt/dm/del/trip-driver-links/backoffice-ep/$g") }.onFailure { log("CLEANUP FAILED trip link $g: $it") } }
+            runCatching { c.delete("core2/tnt/dm/del/drivers/backoffice-ep/$driverGuid") }.onFailure { log("CLEANUP FAILED driver $driverGuid: $it") }
+            log("cleanup: attachment, trip link, driver")
+        }
+    }
+
+    private fun JsonObject.guidOf(table: String): String {
+        val data = this["data"]
+        val row = (if (data is JsonArray) data.first() else data)!!.jsonObject
+        return row[table]!!.jsonObject["guid"]!!.jsonPrimitive.content
+    }
+
+    // ---------- D. identity endpoints without a password ----------
+
+    @Test
+    fun loginAndPasswordProbes() = live { _ ->
+        // Unknown account, so no real account collects failed attempts
+        createAknHttpClient(baseUrl, tenantCode = tenantCode).use { anon ->
+            try {
+                val r = LoginService(anon).login(LoginRequest(password = "SDK-LIVE-wrong", email = "sdk-live-nobody@example.invalid"))
+                fail("login with unknown account succeeded: ${r.code}")
+            } catch (e: ResponseException) {
+                val body = e.response.bodyAsText()
+                log("login with unknown account: ${e.response.status} ${body.take(200)}")
+                assertFalse(body.contains("MALFORMED") || body.contains("No static resource"), body)
+            }
+            if (!persist) return@use log("forgot-password skipped: set AKN_LIVE_PERSIST=1 (sends a real reset email)")
+            val email = props.getProperty("akn.email") ?: return@use log("forgot-password skipped: no akn.email")
+            val init = IdentityPasswordService(anon).forgotPasswordInit(ForgotPasswordInitRequest(email = email))
+            log("forgot-password init: ${init.code} (reset email sent to akn.email)")
         }
     }
 }
