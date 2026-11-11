@@ -3,6 +3,7 @@ package com.akaun.kmp.sdk.support
 import com.akaun.kmp.sdk.client.createAknHttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -37,3 +38,6 @@ class MockAknClient(
         const val BASE_URL = "https://api.test.akaun/"
     }
 }
+
+/** The request body as sent on the wire (JSON text for normal requests). */
+suspend fun HttpRequestData.bodyText(): String = body.toByteArray().decodeToString()
