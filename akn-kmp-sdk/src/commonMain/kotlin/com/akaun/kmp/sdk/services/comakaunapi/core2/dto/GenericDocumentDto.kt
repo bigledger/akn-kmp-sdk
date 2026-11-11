@@ -1,0 +1,46 @@
+package com.akaun.kmp.sdk.services.comakaunapi.core2.dto
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class GenericDocumentDto(
+    val guids: Set<String?>? = null,
+    val date_txn_to: String? = null,
+    val date_txn_from: String? = null,
+    val created_date_to: String? = null,
+    val created_date_from: String? = null,
+    val updated_date_to: String? = null,
+    val updated_date_from: String? = null,
+    val server_docs_1: Set<String?>? = null,
+    val server_docs_2: Set<String?>? = null,
+    val server_docs_3: Set<String?>? = null,
+    val server_docs_4: Set<String?>? = null,
+    val server_docs_5: Set<String?>? = null,
+    val client_docs_1: Set<String?>? = null,
+    val client_docs_2: Set<String?>? = null,
+    val client_docs_3: Set<String?>? = null,
+    val client_docs_4: Set<String?>? = null,
+    val client_docs_5: Set<String?>? = null,
+    val guid_branchs: Set<String?>? = null,
+    val store_guids: Set<String?>? = null,
+    val store_guids2: Set<String?>? = null,
+    val doc_entity_hdr_guids: Set<String?>? = null,
+    val server_doc_locations: Set<String?>? = null,
+    val member_guids: Set<String?>? = null,
+    val processes: Set<String?>? = null,
+    val posting_statuses: Set<String?>? = null,
+    val contact_hdr_guids: Set<String?>? = null,
+    val hdr_del_region_hdr_guids: Set<String?>? = null,
+    val sales_entity_hdr_guids: Set<String?>? = null,
+    val hdr_track_delivery_guids: Set<String?>? = null,
+    val hdr_track_production_guids: Set<String?>? = null,
+    val limit: Int,
+    val search_word: String? = null,
+    val marketplace_status: String? = null,
+    val mkt_payment_status: String? = null,
+    val mkt_order_no: String? = null,
+    val snapshot: String? = null,
+    val order: String,
+    val orderBy: String,
+    val status: String? = null
+)

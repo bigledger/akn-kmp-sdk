@@ -1,4 +1,4 @@
-package com.akaun.kmp.sdk.utils
+package com.akaun.kmp.sdk.utils.wrapper
 
 
 sealed class ApiResult<T : Any> {

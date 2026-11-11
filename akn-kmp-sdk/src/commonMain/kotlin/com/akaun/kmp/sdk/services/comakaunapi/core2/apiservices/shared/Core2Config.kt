@@ -1,4 +1,4 @@
-package com.akaun.kmp.sdk.config
+package com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared
 
 class Core2Config {
     companion object {
