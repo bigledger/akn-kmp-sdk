@@ -17,6 +17,9 @@ import com.akaun.kmp.sdk.models.aggregates.erp.delshipment.DelJobShipmentLinkMod
 import com.akaun.kmp.sdk.models.aggregates.erp.delshipment.DelShipmentProcessingOpenQueueModel
 import com.akaun.kmp.sdk.models.aggregates.erp.pickpackqueue.FinanciaPickPackQueueModel
 import com.akaun.kmp.sdk.models.aggregates.erp.trip.TripsDriverVehicleModel
+import com.akaun.kmp.sdk.models.dbschema.bl_del_job_hdr
+import com.akaun.kmp.sdk.models.dbschema.bl_del_trip_ext
+import com.akaun.kmp.sdk.models.dbschema.bl_del_trip_hdr
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.ApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.BasicApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
@@ -30,6 +33,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class DeliveryModelsTest {
 
@@ -43,6 +47,39 @@ class DeliveryModelsTest {
         assertEquals(1, job.bl_del_job_attachments.size)
         // Map<String, Any>? column -> JsonObject?
         assertIs<JsonObject>(job.bl_del_job_event.first().message_json)
+    }
+
+    @Test
+    fun jobColumnsDecodeToBackendTypes() {
+        val hdr = AknJson.decodeFromString<ApiResponseModel<JobModel>>(JOBS_JSON).data!!.first().bl_del_job_hdr
+
+        // ZonedDateTime -> Instant, Integer -> Int, Map -> JsonObject (issue #12)
+        assertEquals(Instant.parse("2025-10-13T03:22:11.84Z"), hdr.start_time)
+        assertEquals(Instant.parse("2025-10-13T03:22:28.355906Z"), hdr.date_created)
+        assertEquals(120, hdr.duration_minute)
+        assertEquals(1, hdr.ext_delivery_json!!.size)
+        // BigDecimal -> Double
+        val link = AknJson.decodeFromString<ApiResponseModel<DelJobShipmentLinkModel>>(JOB_SHIPMENT_LINKS_JSON).data!!.first()
+        assertEquals(5.0, link.bl_del_job_shipment_link.quantity)
+
+        // Sending a decoded row back keeps every value: dates go out as ISO-8601 UTC, which the backend parses
+        val json = AknJson.encodeToString(bl_del_job_hdr.serializer(), hdr)
+        assertTrue("\"date_created\":\"2025-10-13T03:22:28.355906Z\"" in json, json)
+        assertEquals(hdr, AknJson.decodeFromString(bl_del_job_hdr.serializer(), json))
+    }
+
+    @Test
+    fun datesWithAnOffsetDecodeToTheSameInstant() {
+        val row = AknJson.decodeFromString(bl_del_trip_hdr.serializer(), """{"date_created":"2025-10-13T11:22:28.355906+08:00"}""")
+        assertEquals(Instant.parse("2025-10-13T03:22:28.355906Z"), row.date_created)
+    }
+
+    @Test
+    fun tripExtAclColumnsDecodeAsObjects() {
+        // Backend type is Map<String, Object>; the old String? field failed on any non-null value
+        val ext = AknJson.decodeFromString(bl_del_trip_ext.serializer(), """{"acl_config":{"read":["ADMIN"]},"acl_policy":{}}""")
+        assertEquals(setOf("read"), ext.acl_config!!.keys)
+        assertEquals(JsonObject(emptyMap()), ext.acl_policy)
     }
 
     @Test

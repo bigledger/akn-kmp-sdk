@@ -1,7 +1,8 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class bl_del_trip_ext(
@@ -13,24 +14,24 @@ data class bl_del_trip_ext(
     var ext_type: String? = null,
     var ext_code: String? = null,
     var ext_option: String? = null,
-    var property_json: JsonElement? = null,
+    var property_json: JsonObject? = null,
     var obj_type: String? = null,
     var param_code: String? = null,
     var param_name: String? = null,
     var param_type: String? = null,
-    var param_option_json: JsonElement? = null,
+    var param_option_json: JsonObject? = null,
     var value_string: String? = null,
     var value_file: String? = null,
     var value_numeric: String? = null,
-    var value_datetime: String? = null,
-    var value_json: JsonElement? = null,
-    var created_date: String? = null,
-    var updated_date: String? = null,
+    var value_datetime: Instant? = null,
+    var value_json: JsonObject? = null,
+    var created_date: Instant? = null,
+    var updated_date: Instant? = null,
     var status: String? = null,
     var revision: String? = null,
     var vrsn: String? = null,
     var created_by_subject_guid: String? = null,
     var updated_by_subject_guid: String? = null,
-    var acl_config: String? = null,
-    var acl_policy: String? = null
+    var acl_config: JsonObject? = null,
+    var acl_policy: JsonObject? = null
 )
