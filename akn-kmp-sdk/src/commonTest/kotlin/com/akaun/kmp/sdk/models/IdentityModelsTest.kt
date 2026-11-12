@@ -42,7 +42,7 @@ class IdentityModelsTest {
         assertEquals("7066aeec-cfab-40d3-afaf-f5c8a328dac5", profile.appLoginSubject.guid)
         assertEquals("test.user@example.com", profile.appLoginSubject.main_email)
         // JSON object in an untyped (Any?) column arrives as JsonElement
-        assertEquals("redacted", profile.appLoginSubject.property_json!!.jsonObject["loginContactNumber"]!!.jsonPrimitive.content)
+        assertEquals("redacted", profile.appLoginSubject.property_json!!["loginContactNumber"]!!.jsonPrimitive.content)
         assertNull(profile.appLoginSubject.rank)
         assertEquals("EMAIL_USERNAME", profile.appLoginPrincipalList.single().principal_type)
         assertEquals(1.0, profile.appLoginSubjectExtList.single().value_numeric)

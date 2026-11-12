@@ -1,7 +1,8 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class bl_fi_mst_comp(
@@ -25,7 +26,7 @@ data class bl_fi_mst_comp(
     var comp_time_zone: String? = null,
     var country: String? = null,
     var created_by_subject_guid: String? = null,
-    var created_date: String? = null,
+    var created_date: Instant? = null,
     var default_tax_code_input: String? = null,
     var default_tax_code_output: String? = null,
     var descr: String? = null,
@@ -34,13 +35,13 @@ data class bl_fi_mst_comp(
     var geoloc_latitude: String? = null,
     var geoloc_longitude: String? = null,
     var guid: String? = null,
-    var log_json: JsonElement? = null,
+    var log_json: JsonObject? = null,
     var modified_by_subject_guid: String? = null,
-    var modified_date: String? = null,
+    var modified_date: Instant? = null,
     var name: String? = null,
     var phone: String? = null,
     var postal_code: String? = null,
-    var property_json: JsonElement? = null,
+    var property_json: JsonObject? = null,
     var revision: String? = null,
     var sst_registration_id: String? = null,
     var state: String? = null,

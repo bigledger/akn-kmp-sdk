@@ -10,11 +10,12 @@ import com.akaun.kmp.sdk.models.aggregates.erp.location.LocationModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.ApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.BasicApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class CompanyLocationModelsTest {
 
@@ -41,7 +42,10 @@ class CompanyLocationModelsTest {
             company.bl_fi_mst_comp_ext.map { it.param_code },
         )
         val createdBy = company.bl_fi_mst_comp_ext.single { it.param_code == "CREATED_BY" }
-        assertEquals("7c6c67cf-8dfc-40a2-a964-5351dbb214c9", createdBy.value_json!!.jsonObject["guid"]!!.jsonPrimitive.content)
+        assertEquals("7c6c67cf-8dfc-40a2-a964-5351dbb214c9", createdBy.value_json!!["guid"]!!.jsonPrimitive.content)
+        // ZonedDateTime -> Instant, Map -> JsonObject (issue #12)
+        assertEquals(Instant.parse("2024-08-09T00:46:51.657Z"), company.bl_fi_mst_comp.created_date)
+        assertEquals(true, company.bl_fi_mst_comp.property_json!!["tinValidated"]!!.jsonPrimitive.boolean)
     }
 
     @Test

@@ -18,6 +18,7 @@ import com.akaun.kmp.sdk.models.aggregates.erp.stock.StockTakeDeviceModel
 import com.akaun.kmp.sdk.models.aggregates.erp.stock.StockTakeSessionHeaderModel
 import com.akaun.kmp.sdk.models.aggregates.erp.stock.StockTakeSessionRecordInvItemDeviceModel
 import com.akaun.kmp.sdk.models.aggregates.erp.stock.StockTakeSessionRecordModel
+import com.akaun.kmp.sdk.models.dbschema.bl_inv_stock_take_session_hdr
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.ApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.BasicApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
@@ -28,6 +29,7 @@ import com.akaun.kmp.sdk.services.comakaunapi.core2.dto.StockTakeMobileOfflineDt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class InventoryStockTakeModelsTest {
 
@@ -95,6 +97,22 @@ class InventoryStockTakeModelsTest {
         assertEquals("CUTLERY SET", composed.bl_inv_stock_take_session_record.item_code)
         assertEquals("RF95", composed.bl_inv_stock_take_device.code)
         assertEquals("SERIAL123", composed.bl_inv_mst_item_hdr.code)
+    }
+
+    @Test
+    fun stockTakeAndSerialColumnsDecodeToBackendTypes() {
+        val session = AknJson.decodeFromString<ApiResponseModel<StockTakeSessionHeaderModel>>(STOCK_TAKE_SESSIONS_JSON).data!!.first()
+        assertEquals(Instant.parse("2023-08-21T09:39:41.072003Z"), session.bl_inv_stock_take_session_hdr.date_created)
+        val record = AknJson.decodeFromString<PagingResponseModel<StockTakeSessionRecordModel>>(STOCK_TAKE_RECORDS_JSON).data.first()
+        assertEquals(Instant.parse("2023-06-14T05:45:46.493874Z"), record.bl_inv_stock_take_session_record.date_created)
+        assertEquals(setOf("line_guid"), record.bl_inv_stock_take_session_record.input_json!!.keys)
+        val serial = AknJson.decodeFromString<PagingResponseModel<SerialNumberModel>>(SERIAL_NUMBERS_JSON).data[1].bl_inv_serial_number_hdr
+        assertEquals("53355/CEAGDF4ND05855", serial.sn_id)
+        assertEquals(1.0, serial.quantity_base)
+
+        // date_start used to default to "" and was sent as "date_start":""; an unset date is now left out
+        val body = AknJson.encodeToString(bl_inv_stock_take_session_hdr.serializer(), bl_inv_stock_take_session_hdr(code = "S1"))
+        assertEquals("""{"code":"S1"}""", body)
     }
 
     @Test

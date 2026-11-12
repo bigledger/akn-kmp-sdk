@@ -1,28 +1,29 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class bl_applet_login_subject_link_ext(
-    var created_date: JsonElement? = null,
-    var ext_code: JsonElement? = null,
-    var ext_option: JsonElement? = null,
-    var ext_type: JsonElement? = null,
+    var created_date: Instant? = null,
+    var ext_code: String? = null,
+    var ext_option: String? = null,
+    var ext_type: String? = null,
     var guid: String? = null,
     var link_guid: String? = null,
     var param_code: String? = null,
     var param_name: String? = null,
-    var param_option_json: JsonElement? = null,
+    var param_option_json: JsonObject? = null,
     var param_type: String? = null,
-    var property_json: JsonElement? = null,
+    var property_json: JsonObject? = null,
     var revision: String? = null,
     var status: String? = null,
-    var updated_date: String? = null,
-    var value_datetime: JsonElement? = null,
-    var value_file: JsonElement? = null,
-    var value_json: JsonElement? = null,
-    var value_numeric: JsonElement? = null,
-    var value_string: JsonElement? = null,
-    var vrsn: JsonElement? = null
+    var updated_date: Instant? = null,
+    var value_datetime: Instant? = null,
+    var value_file: String? = null,
+    var value_json: JsonObject? = null,
+    var value_numeric: Double? = null,
+    var value_string: String? = null,
+    var vrsn: String? = null
 )
