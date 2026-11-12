@@ -12,14 +12,17 @@ import com.akaun.kmp.sdk.models.aggregates.erp.gendoc.GenericDocumentLinkModel
 import com.akaun.kmp.sdk.models.aggregates.erp.gendoc.GenericDocumentModel
 import com.akaun.kmp.sdk.models.aggregates.erp.gendoc.GenericDocumentScanLineItemQtyContainer
 import com.akaun.kmp.sdk.models.aggregates.erp.gendoc.GenericDocumentScanLineModel
+import com.akaun.kmp.sdk.models.dbschema.bl_fi_generic_doc_hdr
 import com.akaun.kmp.sdk.models.dbschema.bl_fi_generic_doc_line
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.ApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.BasicApiResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.apiservices.shared.PagingResponseModel
 import com.akaun.kmp.sdk.services.comakaunapi.core2.dto.GenericDocumentDto
+import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class GenericDocumentModelsTest {
 
@@ -47,6 +50,38 @@ class GenericDocumentModelsTest {
         val props = doc.bl_fi_generic_doc_line.single().item_property_json!!
         assertEquals("ITEM ABC", props.itemCode)
         assertEquals("PCS", props.uom)
+    }
+
+    @Test
+    fun documentColumnsDecodeToBackendTypes() {
+        val doc = AknJson.decodeFromString<BasicApiResponseModel<GenericDocumentModel>>(GENERIC_DOCUMENT_INVOICE_JSON).data!!
+        val hdr = doc.bl_fi_generic_doc_hdr
+        val line = doc.bl_fi_generic_doc_line.single()
+
+        // ZonedDateTime -> Instant, Map -> JsonObject, BigDecimal -> Double (issue #12)
+        assertEquals(Instant.parse("2023-04-04T15:00:34.347Z"), hdr.date_txn)
+        assertEquals(Instant.parse("2023-04-04T15:04:10.265771Z"), line.created_date)
+        assertTrue("billingInfo" in hdr.billing_json!!)
+        assertEquals(0.0, line.cost_wa_amount)
+        assertEquals(JsonObject(emptyMap()), line.entity_json)
+
+        // A decoded document sent back keeps its values (what updateGenericDocument relies on)
+        val back = AknJson.decodeFromString(GenericDocumentModel.serializer(), AknJson.encodeToString(GenericDocumentModel.serializer(), doc))
+        assertEquals(doc, back)
+    }
+
+    @Test
+    fun booleanIntArrayAndEnumColumnsDecode() {
+        // These columns are null in the committed fixtures, so use the shapes staging sends
+        val hdr = AknJson.decodeFromString<bl_fi_generic_doc_hdr>(
+            """{"foreign_ccy":true,"doc_level":2,"status_json":[{"status":"POSTED"}],"delivery_option":{}}""",
+        )
+        assertEquals(true, hdr.foreign_ccy)
+        assertEquals(2, hdr.doc_level)
+        assertEquals(1, hdr.status_json!!.size)
+        assertEquals(JsonObject(emptyMap()), hdr.delivery_option)
+        // Backend enum PointTypeEnum arrives as its name
+        assertEquals("REDEEM", AknJson.decodeFromString<bl_fi_generic_doc_line>("""{"point_type":"REDEEM"}""").point_type)
     }
 
     @Test

@@ -1,7 +1,7 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
@@ -14,16 +14,16 @@ data class bl_del_job_attachment(
     var file_name: String? = null,
     var import_format: String? = null,
     var file_details: String? = null,
-    var upload_date: JsonElement? = null,
+    var upload_date: Instant? = null,
     var code: String? = null,
     var obj_type: String? = null,
     var url_key: String? = null,
     var reference_no: String? = null,
-    var file_size: JsonElement? = null,
+    var file_size: Double? = null,
     var process_status: String? = null,
     var error_message: String? = null,
-    var created_date: JsonElement? = null,
-    var updated_date: JsonElement? = null,
+    var created_date: Instant? = null,
+    var updated_date: Instant? = null,
     var created_by_subject_guid: String? = null,
     var updated_by_subject_guid: String? = null,
     var property_json: JsonObject? = null,

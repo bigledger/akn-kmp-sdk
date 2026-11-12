@@ -38,9 +38,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // api: HttpClient and JsonElement are part of the SDK's public API
+            // api: HttpClient, JsonElement/JsonObject and kotlin.time.Instant (with kotlinx-datetime for time zones) are part of the SDK's public API
             api(libs.ktor.client.core)
             api(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.datetime)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)

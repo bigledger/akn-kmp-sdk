@@ -1,11 +1,12 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class bl_fi_mst_entity_login_subject_link(
     val created_by_subject_guid: String,
-    val created_date: String,
+    val created_date: Instant,
     val entity_hdr_guid: String,
     val entity_line_guid: String,
     val guid: String,
@@ -15,6 +16,6 @@ data class bl_fi_mst_entity_login_subject_link(
     val subject_guid: String,
     val title: String,
     val updated_by_subject_guid: String,
-    val updated_date: String,
+    val updated_date: Instant,
     val vrsn: String
 )

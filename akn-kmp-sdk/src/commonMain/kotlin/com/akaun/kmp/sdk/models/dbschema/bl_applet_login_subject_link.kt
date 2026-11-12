@@ -1,7 +1,8 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class bl_applet_login_subject_link(
@@ -9,20 +10,20 @@ data class bl_applet_login_subject_link(
     var applet_catalog_guid: String? = null,
     var applet_catalog_link_guid: String? = null,
     var applet_hdr_guid: String? = null,
-    var code: JsonElement? = null,
-    var comment_date: String? = null,
-    var comments: JsonElement? = null,
+    var code: String? = null,
+    var comment_date: Instant? = null,
+    var comments: String? = null,
     var created_by_subject_guid: String? = null,
-    var created_date: String? = null,
+    var created_date: Instant? = null,
     var guid: String? = null,
-    var link_type: JsonElement? = null,
-    var property_json: JsonElement? = null,
+    var link_type: String? = null,
+    var property_json: JsonObject? = null,
     var rank: String? = null,
-    var rating: JsonElement? = null,
+    var rating: Int? = null,
     var revision: String? = null,
     var status: String? = null,
     var tenant_guid: String? = null,
     var updated_by_subject_guid: String? = null,
-    var updated_date: String? = null,
-    var vrsn: JsonElement? = null
+    var updated_date: Instant? = null,
+    var vrsn: String? = null
 )

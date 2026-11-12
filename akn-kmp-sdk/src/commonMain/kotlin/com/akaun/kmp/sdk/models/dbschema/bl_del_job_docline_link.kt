@@ -1,7 +1,8 @@
 package com.akaun.kmp.sdk.models.dbschema
 
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class bl_del_job_docline_link(
@@ -36,8 +37,8 @@ data class bl_del_job_docline_link(
     var status: String? = null,
     var revision: String? = null,
     var vrsn: String? = null,
-    var created_date: String? = null,
-    var updated_date: String? = null,
+    var created_date: Instant? = null,
+    var updated_date: Instant? = null,
     var created_by_subject_guid: String? = null,
     var updated_by_subject_guid: String? = null,
     var pkg_no_of_parts: String? = null,
@@ -52,7 +53,7 @@ data class bl_del_job_docline_link(
     var sales_invoice_hdr_guid: String? = null,
     var sales_invoice_line_guid: String? = null,
     var sales_invoice_process_status: String? = null,
-    var serial_no_json: JsonElement? = null,
-    var batch_no_json: JsonElement? = null,
-    var bin_no_json: JsonElement? = null
+    var serial_no_json: JsonObject? = null,
+    var batch_no_json: JsonObject? = null,
+    var bin_no_json: JsonObject? = null
 )
