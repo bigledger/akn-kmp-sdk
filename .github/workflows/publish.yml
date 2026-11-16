@@ -1,25 +1,36 @@
 name: Publish
+
+# Publishes the SDK to GitHub Packages when a version tag (v1.2.3) is pushed.
 on:
-  release:
-    types: [released, prereleased]
+  push:
+    tags:
+      - 'v*'
+
 jobs:
   publish:
-    name: Release build and publish
-    runs-on: macOS-latest
+    runs-on: ubuntu-latest # iOS klibs cross-compile, so no macOS runner is needed
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Check tag matches aknVersion
+        run: |
+          version=$(grep '^aknVersion=' gradle.properties | cut -d= -f2)
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match aknVersion=$version in gradle.properties"
+            exit 1
+          fi
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: 21
-      - name: Publish to MavenCentral
-        run: ./gradlew publishToMavenCentral --no-configuration-cache
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Publish to GitHub Packages
+        run: ./gradlew :akn-kmp-sdk:publishAllPublicationsToGitHubPackagesRepository
         env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
-
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

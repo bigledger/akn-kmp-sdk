@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.akaun.kmp.sdk"
-version = "1.0.0"
+version = property("aknVersion") as String
 
 kotlin {
     jvm()
@@ -65,35 +65,45 @@ kotlin {
 }
 
 mavenPublishing {
-    publishToMavenCentral()
-
-    signAllPublications()
-
     coordinates(group.toString(), "akn-kmp-sdk", version.toString())
 
     pom {
-        name = "My akn-kmp-sdk"
-        description = "A akn-kmp-sdk."
-        inceptionYear = "2024"
-        url = "https://github.com/kotlin/multiplatform-library-template/"
+        name = "akn-kmp-sdk"
+        description = "Kotlin Multiplatform Ktor Client SDK for the AKAUN platform"
+        inceptionYear = "2025"
+        url = "https://github.com/bigledger/akn-kmp-sdk"
         licenses {
             license {
-                name = "XXX"
-                url = "YYY"
-                distribution = "ZZZ"
+                name = "The Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "repo"
             }
         }
         developers {
             developer {
-                id = "XXX"
-                name = "YYY"
-                url = "ZZZ"
+                id = "bigledger"
+                name = "Bigledger"
+                url = "https://github.com/bigledger"
             }
         }
         scm {
-            url = "XXX"
-            connection = "YYY"
-            developerConnection = "ZZZ"
+            url = "https://github.com/bigledger/akn-kmp-sdk"
+            connection = "scm:git:git://github.com/bigledger/akn-kmp-sdk.git"
+            developerConnection = "scm:git:ssh://git@github.com/bigledger/akn-kmp-sdk.git"
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/bigledger/akn-kmp-sdk")
+            credentials {
+                // CI supplies these. Locally, put gpr.user / gpr.key in ~/.gradle/gradle.properties, never in this repo.
+                username = System.getenv("GITHUB_ACTOR") ?: findProperty("gpr.user") as String?
+                password = System.getenv("GITHUB_TOKEN") ?: findProperty("gpr.key") as String?
+            }
         }
     }
 }

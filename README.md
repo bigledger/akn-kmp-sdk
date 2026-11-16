@@ -3,7 +3,49 @@
 Kotlin Multiplatform SDK for the akaun API (Android, JVM, iOS), built on Ktor client + kotlinx.serialization.
 It replaces the JVM-only Retrofit SDK [`akn-kotlin-sdk`](https://github.com/bigledger/akn-kotlin-sdk).
 
-**Status:** foundation only (#4). Models (#5) and services (#6) are being migrated. See epic #3.
+**Status:** models and services are migrated. See epic #3.
+
+## Install
+
+The SDK is on GitHub Packages. GitHub asks for a login even for public packages, so create a personal access token (classic) with the `read:packages` scope and add it to your user-level `~/.gradle/gradle.properties`, never to the app's repo:
+
+```properties
+gpr.user=<your GitHub username>
+gpr.key=<the token>
+```
+
+Then in the app's `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/bigledger/akn-kmp-sdk")
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+                password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+```
+
+and add the dependency (to `commonMain` in a KMP app, or to an Android module's `dependencies`):
+
+```kotlin
+implementation("com.akaun.kmp.sdk:akn-kmp-sdk:0.1.0")
+```
+
+In an app's CI, store a `read:packages` token as a secret and pass it in as the `GITHUB_TOKEN` environment variable (with `GITHUB_ACTOR` set to its owner).
+
+## Releasing
+
+1. Bump `aknVersion` in `gradle.properties` and merge it.
+2. Push the tag `v<aknVersion>`, e.g. `git tag v0.1.0 && git push origin v0.1.0`.
+
+The Publish workflow checks that the tag matches `aknVersion`, then publishes. A published version can never be replaced, so a bad release needs a new version.
 
 ## Usage
 
